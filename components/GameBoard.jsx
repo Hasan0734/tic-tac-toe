@@ -1,30 +1,21 @@
 import { Circle, X } from "lucide-react";
 import React, { useState } from "react";
 
-const GameBoard = ({ handlePlayer, selectPlayer }) => {
-  const data = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-  ];
+const GameBoard = ({ handlePlayer, selectPlayer, tiles, setTiles }) => {
+  const handleClick = (i) => {
+    if (tiles[i]) return;
 
-  const [records, setRecords] = useState([]);
-
-  const handleClick = (i, e) => {
-
-    console.log(e.target)
-
-    setRecords((pre) => [...pre, { [i]: player }]);
-    
-
-    // if (records.length < 9) {
-    //   setRecords((pre) => [...pre, { [i]: player }]);
-    //   handlePlayer();
-    //   return;
-    // }
+    const updateTiles = [...tiles];
+    updateTiles[i] = selectPlayer;
+    setTiles(updateTiles);
+    handlePlayer();
   };
 
-  console.log(records);
+  const renderIcon = (value) => {
+    if (value === "X") return <X className="w-full h-full" />;
+    if (value === "O") return <Circle className="w-full h-full" />;
+    return null;
+  };
 
   return (
     <div className="relative w-[216px] h-[216px]">
@@ -89,19 +80,21 @@ const GameBoard = ({ handlePlayer, selectPlayer }) => {
 
       <table className="absolute w-full h-full inset-0 left-[3px] top-[10px]">
         <tbody>
-          {data.map((dt, i) => (
-            <tr className="" key={i}>
-              {dt.map((item) => (
-                <td className="" key={item}>
-                  <span
-                    className="flex justify-center items-center relative  p-2 size-[64px] bg-orange-300"
-                    onClick={(e) => handleClick(item, e)}
-                  >
-                    <X label={"X"}className="size-12 invisible absolute inset-0 w-full h-full" />
-                    <Circle label={"O"}className="size-12 invisible absolute inset-0 w-full h-full" />
-                  </span>
-                </td>
-              ))}
+          {[0, 1, 2].map((row) => (
+            <tr key={row}>
+              {[0, 1, 2].map((col) => {
+                const index = row * 3 + col; // Calculate the 1D index
+                return (
+                  <td key={index} className="">
+                    <span
+                      className="flex justify-center items-center relative p-2 size-[64px]"
+                      onClick={() => handleClick(index)}
+                    >
+                      {renderIcon(tiles[index])}
+                    </span>
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

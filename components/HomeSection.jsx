@@ -11,6 +11,7 @@ const HomeSection = () => {
   const [resetGame, setResetGame] = useState(false);
   const [selectPlayer, setSelectPlayer] = useState("X");
   const [tiles, setTiles] = useState(Array(9).fill(null));
+  const [start, setStart] = useState(false);
 
   const handleNewGame = () => {
     setNewGame(true);
@@ -18,9 +19,12 @@ const HomeSection = () => {
 
   const handleResetGame = () => {
     setResetGame(true);
+    setTiles(Array(9).fill(null));
+    setSelectPlayer("X");
   };
 
   const handleSelectPlayer = () => {
+    setStart(true);
     if (selectPlayer === "X") {
       setSelectPlayer("O");
       return;
@@ -40,7 +44,7 @@ const HomeSection = () => {
               <div className="text-center w-full space-y-4 border-b pb-2">
                 <div className="flex items-center w-full gap-4">
                   <div
-                    onClick={handleSelectPlayer}
+                    onClick={() => (start ? "" : handleSelectPlayer)}
                     className={cn(
                       "flex-grow border rounded-md px-4 py-2 flex items-center justify-between cursor-pointer",
                       { "border-b-primary border-b-4 ": selectPlayer === "X" }
@@ -52,7 +56,7 @@ const HomeSection = () => {
                     </span>
                   </div>
                   <div
-                    onClick={handleSelectPlayer}
+                    onClick={() => (start ? "" : handleSelectPlayer)}
                     className={cn(
                       "flex-grow border rounded-md px-4 py-2 flex items-center justify-between cursor-pointer",
                       { "border-b-primary  border-b-4 ": selectPlayer === "O" }
@@ -66,14 +70,22 @@ const HomeSection = () => {
                 </div>
 
                 <p className="text-sm text-muted-foreground">
-                  Start game or select player
+                  {start
+                    ? `'${selectPlayer}' Turn`
+                    : "Start game or select player"}
                 </p>
               </div>
               <GameBoard
+                setTiles={setTiles}
                 tiles={tiles}
                 selectPlayer={selectPlayer}
                 handlePlayer={handleSelectPlayer}
               />
+              <div>
+                <Button onClick={handleResetGame} variant={"ghost"}>
+                  Restart game
+                </Button>
+              </div>
             </>
           )}
           {!newGame && <Button onClick={setNewGame}>New Game</Button>}
