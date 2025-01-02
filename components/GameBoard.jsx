@@ -1,14 +1,24 @@
 import { Circle, X } from "lucide-react";
 import React, { useState } from "react";
 
-const GameBoard = ({ handlePlayer, selectPlayer, tiles, setTiles }) => {
+const GameBoard = ({ handlePlayer, selectPlayer, tiles, setTiles , setGameOver,gameOver, setDraw}) => {
+
+
   const handleClick = (i) => {
     if (tiles[i]) return;
-
+    if (gameOver) return;
     const updateTiles = [...tiles];
     updateTiles[i] = selectPlayer;
     setTiles(updateTiles);
     handlePlayer();
+
+    if (updateTiles.every((cell) => cell !== null)) {
+      setGameOver(true); // Game is a draw
+      setDraw(true)
+      return;
+    }
+
+
   };
 
   const renderIcon = (value) => {
