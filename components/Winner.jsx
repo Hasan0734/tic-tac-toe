@@ -20,9 +20,9 @@ const Winner = ({ winner, resetGame }) => {
         
         >
         {winner === "X" ? (
-          <X className="size-24" />
+          <X className="size-24 text-primary" />
         ) : (
-          <Circle className="size-24" />
+          <Circle className="size-24 text-primary" />
         )}
         </motion.span>
         <motion.h1

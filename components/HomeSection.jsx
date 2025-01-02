@@ -10,14 +10,20 @@ import Draw from "./Draw";
 import { motion } from "motion/react";
 
 const winningCombination = [
-  { combo: [0, 1, 2], className: "" }, // Top row
-  { combo: [3, 4, 5], className: "" }, // Middle row
-  { combo: [6, 7, 8], className: "" }, // Bottom row
-  { combo: [0, 3, 6], className: "" }, // Left column
-  { combo: [1, 4, 7], className: "" }, // Middle column
-  { combo: [2, 5, 8], className: "" }, // Right column
-  { combo: [0, 4, 8], className: "" }, // Top-left to bottom-right diagonal
-  { combo: [2, 4, 6], className: "" }, // Top-right to bottom-left diagonal
+  { combo: [0, 1, 2], className: "top-1/6 left-0 w-full h-1" }, // Top row
+  { combo: [3, 4, 5], className: "top-1/2 left-0 w-full h-1" }, // Middle row
+  { combo: [6, 7, 8], className: "top-5/6 left-0 w-full h-1" }, // Bottom row
+  { combo: [0, 3, 6], className: "top-0 left-1/6 h-full w-1" }, // Left column
+  { combo: [1, 4, 7], className: "top-0 left-1/2 h-full w-1" }, // Middle column
+  { combo: [2, 5, 8], className: "top-0 left-5/6 h-full w-1" }, // Right column
+  {
+    combo: [0, 4, 8],
+    className: "top-0 left-0 w-full h-1 rotate-45 origin-top-left",
+  }, // Top-left to bottom-right diagonal
+  {
+    combo: [2, 4, 6],
+    className: "top-0 left-0 w-full h-1 -rotate-45 origin-top-right",
+  }, // Top-right to bottom-left diagonal
 ];
 
 const winnerChecker = (
@@ -25,20 +31,21 @@ const winnerChecker = (
   setWinner,
   setGameOver,
   setPlayerXScore,
-  setPlayerOScore
+  setPlayerOScore,
+  setSrikeClass,
 ) => {
-  for (const { combo } of winningCombination) {
+  for (const { combo, className } of winningCombination) {
     const tileValue0 = tiles[combo[0]];
     const tileValue1 = tiles[combo[1]];
     const tileValue2 = tiles[combo[2]];
 
-    console.log(tileValue0, tileValue1, tileValue2);
 
     if (
       tileValue0 !== null &&
       tileValue0 === tileValue1 &&
       tileValue1 === tileValue2
     ) {
+      setSrikeClass(className)
       setGameOver(true);
       setWinner(tileValue0);
       if (tileValue0 === "X") {
@@ -60,6 +67,8 @@ const HomeSection = () => {
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
   const [draw, setDraw] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [strikeClass, setSrikeClass] = useState(null);
 
   const [playerXScore, setPlayerXScore] = useState(0);
   const [playerOScore, setPlayerOScore] = useState(0);
@@ -71,9 +80,18 @@ const HomeSection = () => {
       setWinner,
       setGameOver,
       setPlayerXScore,
-      setPlayerOScore
+      setPlayerOScore,
+      setSrikeClass
     );
   }, [tiles]);
+
+  // useEffect(() => {
+  //   if (gameOver) {
+  //     setShowResult(false); // Ensure it's hidden initially
+  //     const timer = setTimeout(() => setShowResult(true), 2000); // Delay visibility by 2 seconds
+  //     return () => clearTimeout(timer); // Cleanup timer on unmount
+  //   }
+  // }, [gameOver]);
 
   const handleNewGame = () => {
     setNewGame(true);
@@ -87,6 +105,8 @@ const HomeSection = () => {
     setStart(false);
     setWinner(null);
     setDraw(false);
+    setShowResult(false); // Reset visibility
+    setSrikeClass(null)
   };
 
   const handleSelectPlayer = () => {
@@ -148,7 +168,7 @@ const HomeSection = () => {
                   ) : (
                     <motion.span
                       initial={{ opacity: 0, translateY: 4 }}
-                      animate={{ opacity: 1, translateY:0 }}
+                      animate={{ opacity: 1, translateY: 0 }}
                       transition={{
                         duration: 0.8,
                         ease: "easeInOut",
@@ -159,9 +179,9 @@ const HomeSection = () => {
                   )}
                 </p>
               </div>
-              {winner ? (
+              {gameOver && showResult && winner ? (
                 <Winner winner={winner} resetGame={handleResetGame} />
-              ) : draw ? (
+              ) : gameOver && showResult && draw ? (
                 <Draw resetGame={handleResetGame} />
               ) : (
                 <GameBoard
@@ -173,6 +193,8 @@ const HomeSection = () => {
                   tiles={tiles}
                   selectPlayer={selectPlayer}
                   handlePlayer={handleSelectPlayer}
+                  strikeClass={strikeClass}
+                 
                 />
               )}
               <div>

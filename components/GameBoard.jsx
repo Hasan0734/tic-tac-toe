@@ -11,7 +11,10 @@ const GameBoard = ({
   setGameOver,
   gameOver,
   setDraw,
+  strikeClass
 }) => {
+
+
   const handleClick = (i) => {
     if (tiles[i]) return;
     if (gameOver) return;
@@ -27,40 +30,15 @@ const GameBoard = ({
     }
   };
 
-  const renderIcon = (value) => {
-    if (value === "X")
-      return (
-        <motion.span
-        initial={{ opacity: 0, height: '6px'}}
-        animate={{ opacity: 1, height: '100%' }}
-        transition={{
-          duration: 0.4,
-          ease: "easeInOut",
-        }}
-        >
-          <X className="w-full h-full" />
-        </motion.span>
-      );
-    if (value === "O")
-      return (
-        <motion.span
-        initial={{ opacity: 0, height: '6px'}}
-        animate={{ opacity: 1, height: '100%' }}
-        transition={{
-          duration: 0.4,
-          ease: "easeInOut",
-        }}
-        >
-         <Circle className="w-full h-full" />
-        </motion.span>
-      
-      );
-    return null;
-  };
 
   return (
     <div className="relative w-[216px] h-[216px]">
       <BoardBorder />
+      {strikeClass !== null && (
+        <div
+          className={`absolute bg-primary z-10 ${strikeClass}`}
+        ></div>
+      )}
 
       <table className="absolute w-full h-full inset-0 left-[3px] top-[10px]">
         <tbody>
@@ -85,13 +63,40 @@ const GameBoard = ({
         </tbody>
       </table>
     </div>
-
-    // <div className='grid grid-cols-3 gap-5'>
-
-    //     {[1,2,3,4,5,6,7,8,9].map(() => <BoardCard/>)}
-
-    // </div>
   );
 };
 
 export default GameBoard;
+
+
+
+const renderIcon = (value) => {
+  if (value === "X")
+    return (
+      <motion.span
+      initial={{ opacity: 0, height: '6px'}}
+      animate={{ opacity: 1, height: '100%' }}
+      transition={{
+        duration: 0.4,
+        ease: "easeInOut",
+      }}
+      >
+        <X className="w-full h-full" />
+      </motion.span>
+    );
+  if (value === "O")
+    return (
+      <motion.span
+      initial={{ opacity: 0, height: '6px'}}
+      animate={{ opacity: 1, height: '100%' }}
+      transition={{
+        duration: 0.4,
+        ease: "easeInOut",
+      }}
+      >
+       <Circle className="w-full h-full" />
+      </motion.span>
+    
+    );
+  return null;
+};
