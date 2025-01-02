@@ -1,9 +1,17 @@
 import { Circle, X } from "lucide-react";
 import React, { useState } from "react";
+import BoardBorder from "./BoardBorder";
+import { motion } from "motion/react";
 
-const GameBoard = ({ handlePlayer, selectPlayer, tiles, setTiles , setGameOver,gameOver, setDraw}) => {
-
-
+const GameBoard = ({
+  handlePlayer,
+  selectPlayer,
+  tiles,
+  setTiles,
+  setGameOver,
+  gameOver,
+  setDraw,
+}) => {
   const handleClick = (i) => {
     if (tiles[i]) return;
     if (gameOver) return;
@@ -14,79 +22,45 @@ const GameBoard = ({ handlePlayer, selectPlayer, tiles, setTiles , setGameOver,g
 
     if (updateTiles.every((cell) => cell !== null)) {
       setGameOver(true); // Game is a draw
-      setDraw(true)
+      setDraw(true);
       return;
     }
-
-
   };
 
   const renderIcon = (value) => {
-    if (value === "X") return <X className="w-full h-full" />;
-    if (value === "O") return <Circle className="w-full h-full" />;
+    if (value === "X")
+      return (
+        <motion.span
+        initial={{ opacity: 0, height: '6px'}}
+        animate={{ opacity: 1, height: '100%' }}
+        transition={{
+          duration: 0.4,
+          ease: "easeInOut",
+        }}
+        >
+          <X className="w-full h-full" />
+        </motion.span>
+      );
+    if (value === "O")
+      return (
+        <motion.span
+        initial={{ opacity: 0, height: '6px'}}
+        animate={{ opacity: 1, height: '100%' }}
+        transition={{
+          duration: 0.4,
+          ease: "easeInOut",
+        }}
+        >
+         <Circle className="w-full h-full" />
+        </motion.span>
+      
+      );
     return null;
   };
 
   return (
     <div className="relative w-[216px] h-[216px]">
-      <svg className="stroke-primary stroke-[6px] h-full w-full">
-        <path
-          d="M108,83L6,83"
-          style={{
-            strokeDasharray: 102,
-            strokeDashoffset: 0,
-          }}
-        ></path>
-        <path
-          d="M108,153L6,153"
-          style={{
-            strokeDasharray: 102,
-            strokeDashoffset: 0,
-          }}
-        ></path>
-        <path
-          d="M108,83L210,83"
-          style={{
-            strokeDasharray: 102,
-            strokeDashoffset: 0,
-          }}
-        ></path>
-        <path
-          d="M108,153L210,153"
-          style={{
-            strokeDasharray: 102,
-            strokeDashoffset: 0,
-          }}
-        ></path>
-        <path
-          d="M73,118L73,16"
-          style={{
-            strokeDasharray: 102,
-            strokeDashoffset: 0,
-          }}
-        ></path>
-        <path
-          d="M143,118L143,16"
-          style={{
-            strokeDasharray: 102,
-            strokeDashoffset: 0,
-          }}
-        ></path>
-        <path
-          d="M73,118L73,220"
-          style={{
-            strokeDasharray: 102,
-            strokeDashoffset: 0,
-          }}
-        ></path>
-        <path
-          d="M143,118L143,220"
-          style={{
-            strokeDasharray: 102,
-            strokeDashoffset: 0,
-          }}
-        ></path>
-      </svg>
+      <BoardBorder />
 
       <table className="absolute w-full h-full inset-0 left-[3px] top-[10px]">
         <tbody>
@@ -100,6 +74,7 @@ const GameBoard = ({ handlePlayer, selectPlayer, tiles, setTiles , setGameOver,g
                       className="flex justify-center items-center relative p-2 size-[64px]"
                       onClick={() => handleClick(index)}
                     >
+                      {/* <X className="w-full h-full" /> */}
                       {renderIcon(tiles[index])}
                     </span>
                   </td>

@@ -7,8 +7,7 @@ import { Circle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Winner from "./Winner";
 import Draw from "./Draw";
-
-
+import { motion } from "motion/react";
 
 const winningCombination = [
   { combo: [0, 1, 2], className: "" }, // Top row
@@ -32,6 +31,8 @@ const winnerChecker = (
     const tileValue0 = tiles[combo[0]];
     const tileValue1 = tiles[combo[1]];
     const tileValue2 = tiles[combo[2]];
+
+    console.log(tileValue0, tileValue1, tileValue2);
 
     if (
       tileValue0 !== null &&
@@ -79,7 +80,7 @@ const HomeSection = () => {
   };
 
   const handleResetGame = () => {
-    setResetGame(true);
+    setResetGame(!resetGame);
     setTiles(Array(9).fill(null));
     setSelectPlayer("X");
     setGameOver(false);
@@ -103,8 +104,7 @@ const HomeSection = () => {
       <div className="flex flex-col items-center gap-6">
         <h1 className="text-4xl font-semibold ">Tic Tac Toe</h1>
 
-        <Card className="border relative rounded-md p-10 w-[450px] flex items-center justify-center flex-col space-y-6">
-         
+        <Card className="border relative min-h-[216px] rounded-md p-10 w-[450px] flex items-center justify-center flex-col space-y-6">
           {newGame && (
             <>
               <div className="text-center w-full space-y-4 border-b pb-2">
@@ -146,7 +146,16 @@ const HomeSection = () => {
                       Turn
                     </>
                   ) : (
-                    "Start game or select player"
+                    <motion.span
+                      initial={{ opacity: 0, translateY: 4 }}
+                      animate={{ opacity: 1, translateY:0 }}
+                      transition={{
+                        duration: 0.8,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      Start game or select player
+                    </motion.span>
                   )}
                 </p>
               </div>
@@ -156,6 +165,7 @@ const HomeSection = () => {
                 <Draw resetGame={handleResetGame} />
               ) : (
                 <GameBoard
+                  key={resetGame}
                   setDraw={setDraw}
                   setGameOver={setGameOver}
                   gameOver={gameOver}
