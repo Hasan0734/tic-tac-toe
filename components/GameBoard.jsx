@@ -1,12 +1,11 @@
 import { Circle, X } from "lucide-react";
-import React, { useState } from "react";
+import React from "react";
 import BoardBorder from "./BoardBorder";
 import { motion } from "motion/react";
-import { cn } from "@/lib/utils";
+import { cn, handlePlayer } from "@/lib/utils";
 
 const GameBoard = ({
-  handlePlayer,
-  selectPlayer,
+  player,
   tiles,
   setTiles,
   setGameOver,
@@ -14,15 +13,17 @@ const GameBoard = ({
   setDraw,
   strikeClass,
   setStart,
+  setPlayer
 }) => {
+
   const handleClick = (i) => {
     if (tiles[i]) return;
     if (gameOver) return;
     setStart(true);
     const updateTiles = [...tiles];
-    updateTiles[i] = selectPlayer;
+    updateTiles[i] = player;
     setTiles(updateTiles);
-    handlePlayer();
+    handlePlayer(player, setPlayer);
 
     if (updateTiles.every((cell) => cell !== null)) {
       setGameOver(true); // Game is a draw
@@ -31,7 +32,6 @@ const GameBoard = ({
     }
   };
 
-  console.log(strikeClass?.height);
 
   return (
     <div className="relative h-[236px] py-2">
@@ -75,8 +75,6 @@ const GameBoard = ({
                     role="button"
                     className=" relative align-top size-[64px] p-2 cursor-pointer"
                   >
-                    {/* <X className="w-full h-full" /> */}
-
                     <motion.span
                       className="w-full flex items-center justify-center relative size-[48px]"
                       key={tiles[index]}
@@ -106,8 +104,7 @@ const GameBoard = ({
                       />
                     </motion.span>
 
-                    {/* {renderIcon(tiles[index])} */}
-                    {/* </motion.span> */}
+                  
                   </td>
                 );
               })}
@@ -121,8 +118,3 @@ const GameBoard = ({
 
 export default GameBoard;
 
-const renderIcon = (value) => {
-  if (value === "X") return <X className="size-[48px]" />;
-  if (value === "O") return <Circle className=" size-[48px]" />;
-  return null;
-};
