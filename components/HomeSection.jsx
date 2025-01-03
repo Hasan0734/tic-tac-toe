@@ -165,7 +165,7 @@ const HomeSection = () => {
 
         <Card
           className={cn(
-            "border relative min-h-[216px] rounded-md p-10 w-[450px] space-y-6",
+            "border relative min-h-[216px] rounded-md py-5 px-10 w-[450px] space-y-6",
             { "flex items-center justify-center flex-col": !newGame }
           )}
         >
@@ -184,7 +184,7 @@ const HomeSection = () => {
                   <div
                     onClick={() => (start ? "" : handleSelectPlayer())}
                     className={cn(
-                      "flex-grow border rounded-md px-4 py-2 flex items-center justify-between cursor-pointer",
+                      "flex-grow border rounded-md px-4 py-1.5 flex items-center justify-between cursor-pointer",
                       { "border-b-primary border-b-4 ": selectPlayer === "X" }
                     )}
                   >
@@ -196,7 +196,7 @@ const HomeSection = () => {
                   <div
                     onClick={() => (start ? "" : handleSelectPlayer())}
                     className={cn(
-                      "flex-grow border rounded-md px-4 py-2 flex items-center justify-between cursor-pointer",
+                      "flex-grow border rounded-md px-4 py-1.5 flex items-center justify-between cursor-pointer",
                       { "border-b-primary  border-b-4 ": selectPlayer === "O" }
                     )}
                   >

@@ -27,7 +27,7 @@ const PlayType = () => {
   return (
     <div className="flex items-center justify-between">
       <Select size="sm" defaultValue="FRIEND" onValueChange={handleSelect}>
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-auto gap-1 border-0 focus:ring-0 flex-row-reverse">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
