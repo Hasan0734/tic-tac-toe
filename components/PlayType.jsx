@@ -10,24 +10,32 @@ import {
 } from "./ui/select";
 import { Share2 } from "lucide-react";
 import { Button } from "./ui/button";
-import { useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { generateUniqueId } from "@/lib/utils";
 
 const PlayType = () => {
   const [value, setValue] = useState();
   const router = useRouter();
-
+  const {invitedId} = useParams();
+  
   const handleSelect = (e) => {
     if (e === "ONLINE-FRIEND") {
       const uniqueId = generateUniqueId();
       router.push("/" + uniqueId);
       setValue(e);
+      return;
     }
+    if(invitedId){
+      router.replace('/')
+      setValue(e);
+      return;
+    }
+    setValue(e)
   };
 
   return (
     <div className="flex items-center justify-between">
-      <Select size="sm" defaultValue="FRIEND" onValueChange={handleSelect}>
+      <Select size="sm" defaultValue={invitedId ? "ONLINE-FRIEND" : 'FRIEND'} onValueChange={handleSelect}>
         <SelectTrigger className="w-auto gap-1 border-0 focus:ring-0 flex-row-reverse">
           <SelectValue />
         </SelectTrigger>
