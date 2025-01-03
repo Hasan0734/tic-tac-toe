@@ -7,7 +7,7 @@ const Draw = ({ resetGame }) => {
   return (
     <Card
       onClick={resetGame}
-      className="cursor-pointer size-[216px] flex items-center justify-center flex-col gap-3 border p-3"
+      className="cursor-pointer w-[216px] h-[236px] flex items-center justify-center flex-col gap-3 border p-3 mx-auto"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.3 }}
@@ -18,8 +18,8 @@ const Draw = ({ resetGame }) => {
         }}
         className="flex items-center gap-2"
       >
-        <X className="size-20" />
-        <Circle className="size-20" />
+        <X className="size-16" />
+        <Circle className="size-16" />
       </motion.div>
       <motion.h1
         initial={{ opacity: 0, translateY: 30 }}

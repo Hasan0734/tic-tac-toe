@@ -8,21 +8,48 @@ import { cn } from "@/lib/utils";
 import Winner from "./Winner";
 import Draw from "./Draw";
 import { motion } from "motion/react";
+import PlayType from "./PlayType";
 
 const winningCombination = [
-  { combo: [0, 1, 2], className: "top-1/6 left-0 w-full h-1" }, // Top row
-  { combo: [3, 4, 5], className: "top-1/2 left-0 w-full h-1" }, // Middle row
-  { combo: [6, 7, 8], className: "top-5/6 left-0 w-full h-1" }, // Bottom row
-  { combo: [0, 3, 6], className: "top-0 left-1/6 h-full w-1" }, // Left column
-  { combo: [1, 4, 7], className: "top-0 left-1/2 h-full w-1" }, // Middle column
-  { combo: [2, 5, 8], className: "top-0 left-5/6 h-full w-1" }, // Right column
+  {
+    combo: [0, 1, 2],
+    className: "top-[44px] left-[80px] h-1 right-0",
+    width: "204px",
+  }, // Top row
+  {
+    combo: [3, 4, 5],
+    className: "top-[115px] left-[80px]  h-1 right-0",
+    width: "204px",
+  }, // Middle row
+  {
+    combo: [6, 7, 8],
+    className: "top-[184px] left-[80px] h-1 right-0",
+    width: "204px",
+  }, // Bottom row
+  {
+    combo: [0, 3, 6],
+    className: "top-[14px] left-[112px]  w-1",
+    height: "204px",
+  }, // Left column
+  {
+    combo: [1, 4, 7],
+    className: "top-[14px] left-[182px] w-1",
+    height: "204px",
+  }, // Middle column
+  {
+    combo: [2, 5, 8],
+    className: "top-[14px] right-[112px] w-1",
+    height: "204px",
+  }, // Right column
   {
     combo: [0, 4, 8],
-    className: "top-0 left-0 w-full h-1 rotate-45 origin-top-left",
+    className: "top-4 left-[87px]  h-1 rotate-45 origin-top-left",
+    width: "278px",
   }, // Top-left to bottom-right diagonal
   {
     combo: [2, 4, 6],
-    className: "top-0 left-0 w-full h-1 -rotate-45 origin-top-right",
+    className: " h-1 -rotate-45 top-[15px] right-[84px] origin-bottom-right",
+    width: "278px",
   }, // Top-right to bottom-left diagonal
 ];
 
@@ -33,19 +60,28 @@ const winnerChecker = (
   setPlayerXScore,
   setPlayerOScore,
   setSrikeClass,
+  setMatchIndex
 ) => {
-  for (const { combo, className } of winningCombination) {
+  for (const { combo, className, ...rest } of winningCombination) {
     const tileValue0 = tiles[combo[0]];
     const tileValue1 = tiles[combo[1]];
     const tileValue2 = tiles[combo[2]];
-
 
     if (
       tileValue0 !== null &&
       tileValue0 === tileValue1 &&
       tileValue1 === tileValue2
     ) {
-      setSrikeClass(className)
+      console.log(
+        tileValue0,
+        combo[0],
+        tileValue1,
+        combo[1],
+        tileValue2,
+        combo[2]
+      );
+      setMatchIndex([combo[0], combo[1], combo[2]]);
+      setSrikeClass({ class: className, ...rest });
       setGameOver(true);
       setWinner(tileValue0);
       if (tileValue0 === "X") {
@@ -68,7 +104,12 @@ const HomeSection = () => {
   const [winner, setWinner] = useState(null);
   const [draw, setDraw] = useState(false);
   const [showResult, setShowResult] = useState(false);
-  const [strikeClass, setSrikeClass] = useState(null);
+  const [strikeClass, setSrikeClass] = useState({
+    class: null,
+    width: 0,
+    height: 0,
+  });
+  const [matchIndex, setMatchIndex] = useState([]);
 
   const [playerXScore, setPlayerXScore] = useState(0);
   const [playerOScore, setPlayerOScore] = useState(0);
@@ -81,21 +122,20 @@ const HomeSection = () => {
       setGameOver,
       setPlayerXScore,
       setPlayerOScore,
-      setSrikeClass
+      setSrikeClass,
+      setMatchIndex
     );
   }, [tiles]);
 
-  // useEffect(() => {
-  //   if (gameOver) {
-  //     setShowResult(false); // Ensure it's hidden initially
-  //     const timer = setTimeout(() => setShowResult(true), 2000); // Delay visibility by 2 seconds
-  //     return () => clearTimeout(timer); // Cleanup timer on unmount
-  //   }
-  // }, [gameOver]);
+  // showing the result
 
-  const handleNewGame = () => {
-    setNewGame(true);
-  };
+  useEffect(() => {
+    if (gameOver) {
+      setShowResult(false); // Ensure it's hidden initially
+      const timer = setTimeout(() => setShowResult(true), draw ? 500 : 1200); // Delay visibility by 2 seconds
+      return () => clearTimeout(timer); // Cleanup timer on unmount
+    }
+  }, [gameOver, draw]);
 
   const handleResetGame = () => {
     setResetGame(!resetGame);
@@ -106,11 +146,10 @@ const HomeSection = () => {
     setWinner(null);
     setDraw(false);
     setShowResult(false); // Reset visibility
-    setSrikeClass(null)
+    setSrikeClass({ class: null, width: 0, height: 0 });
   };
 
   const handleSelectPlayer = () => {
-    setStart(true);
     if (selectPlayer === "X") {
       setSelectPlayer("O");
       return;
@@ -124,7 +163,20 @@ const HomeSection = () => {
       <div className="flex flex-col items-center gap-6">
         <h1 className="text-4xl font-semibold ">Tic Tac Toe</h1>
 
-        <Card className="border relative min-h-[216px] rounded-md p-10 w-[450px] flex items-center justify-center flex-col space-y-6">
+        <Card
+          className={cn(
+            "border relative min-h-[216px] rounded-md p-10 w-[450px] space-y-6",
+            { "flex items-center justify-center flex-col": !newGame }
+          )}
+        >
+          {newGame && <PlayType />}
+
+          {!newGame && (
+            <div className="">
+              <Button onClick={setNewGame}>New Game</Button>
+            </div>
+          )}
+
           {newGame && (
             <>
               <div className="text-center w-full space-y-4 border-b pb-2">
@@ -188,16 +240,16 @@ const HomeSection = () => {
                   key={resetGame}
                   setDraw={setDraw}
                   setGameOver={setGameOver}
+                  setStart={setStart}
                   gameOver={gameOver}
                   setTiles={setTiles}
                   tiles={tiles}
                   selectPlayer={selectPlayer}
                   handlePlayer={handleSelectPlayer}
                   strikeClass={strikeClass}
-                 
                 />
               )}
-              <div>
+              <div className="flex justify-center">
                 <Button
                   onClick={handleResetGame}
                   variant={"ghost"}
@@ -208,7 +260,6 @@ const HomeSection = () => {
               </div>
             </>
           )}
-          {!newGame && <Button onClick={setNewGame}>New Game</Button>}
         </Card>
       </div>
     </>

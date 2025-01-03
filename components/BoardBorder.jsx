@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 const BoardBorder = () => {
   return (
     <svg
-      className="stroke-primary stroke-[6px] h-full w-full"
+      className="stroke-primary stroke-[6px] m-auto w-[216px] h-full absolute -top-[4px] inset-0 z-10"
      
     >
       <motion.path

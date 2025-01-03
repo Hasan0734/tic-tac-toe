@@ -8,7 +8,7 @@ const Winner = ({ winner, resetGame }) => {
 
       <Card
         onClick={resetGame}
-        className=" cursor-pointer size-[216px] flex items-center justify-center flex-col gap-3 border p-3 "
+        className=" cursor-pointer w-[216px] h-[236px] flex items-center justify-center flex-col gap-3 border p-3 mx-auto"
       >
         <motion.span
          initial={{ opacity: 0, scale: 0.3 }}
