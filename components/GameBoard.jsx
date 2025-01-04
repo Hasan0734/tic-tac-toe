@@ -1,7 +1,7 @@
 import { Circle, X } from "lucide-react";
 import React from "react";
 import BoardBorder from "./BoardBorder";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { cn, handlePlayer } from "@/lib/utils";
 
 const GameBoard = ({
@@ -13,9 +13,8 @@ const GameBoard = ({
   setDraw,
   strikeClass,
   setStart,
-  setPlayer
+  setPlayer,
 }) => {
-
   const handleClick = (i) => {
     if (tiles[i]) return;
     if (gameOver) return;
@@ -31,7 +30,6 @@ const GameBoard = ({
       return;
     }
   };
-
 
   return (
     <div className="relative h-[236px] py-2">
@@ -58,6 +56,7 @@ const GameBoard = ({
             ></motion.div>
           )
         : null}
+
 
       <table
         style={{ borderSpacing: "6px", borderCollapse: "separate" }}
@@ -103,8 +102,6 @@ const GameBoard = ({
                         )}
                       />
                     </motion.span>
-
-                  
                   </td>
                 );
               })}
@@ -117,4 +114,3 @@ const GameBoard = ({
 };
 
 export default GameBoard;
-

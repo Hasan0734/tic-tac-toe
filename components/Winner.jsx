@@ -1,7 +1,7 @@
 import { Circle, X } from "lucide-react";
 import React from "react";
 import { Card } from "./ui/card";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 
 const Winner = ({ winner, resetGame }) => {
   return (
