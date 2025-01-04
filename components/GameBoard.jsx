@@ -2,7 +2,7 @@ import { Circle, X } from "lucide-react";
 import React from "react";
 import BoardBorder from "./BoardBorder";
 import { motion } from "framer-motion";
-import { cn, handlePlayer } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 const GameBoard = ({
   player,
@@ -14,15 +14,37 @@ const GameBoard = ({
   strikeClass,
   setStart,
   setPlayer,
+  socket,
+  firstSelect
 }) => {
   const handleClick = (i) => {
-    if (tiles[i]) return;
-    if (gameOver) return;
-    setStart(true);
+
+
+    console.log(tiles)
+
+    if(firstSelect === player){
+
+    }
+
+
+    if (!player && tiles[i] && gameOver) return;
+
+
     const updateTiles = [...tiles];
     updateTiles[i] = player;
-    setTiles(updateTiles);
-    handlePlayer(player, setPlayer);
+   
+
+
+
+    if (socket) {
+      socket.emit("setPlayer", player === "X" ? "O" : "X");
+      socket.emit("setTiles", updateTiles)
+      socket.emit("setStart", true)
+    } else {
+      setStart(true);
+      setPlayer(player === "X" ? "O" : "X");
+      setTiles(updateTiles);
+    }
 
     if (updateTiles.every((cell) => cell !== null)) {
       setGameOver(true); // Game is a draw
@@ -56,7 +78,6 @@ const GameBoard = ({
             ></motion.div>
           )
         : null}
-
 
       <table
         style={{ borderSpacing: "6px", borderCollapse: "separate" }}

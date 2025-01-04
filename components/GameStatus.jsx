@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from "framer-motion";
 
-const GameStatus = ({player, start, gameOver}) => {
+const GameStatus = ({player, start, gameOver, placeholder}) => {
   return (
     <>
    <p className="text-sm text-muted-foreground">
@@ -23,7 +23,7 @@ const GameStatus = ({player, start, gameOver}) => {
                         ease: "easeInOut",
                       }}
                     >
-                      Start game or select player
+                      {placeholder}
                     </motion.span>
                   )}
                 </p>

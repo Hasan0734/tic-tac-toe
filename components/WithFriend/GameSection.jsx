@@ -10,6 +10,7 @@ import Winner from "../Winner";
 import Draw from "../Draw";
 import GameBoard from "../GameBoard";
 import { io } from "socket.io-client";
+import { useParams } from "next/navigation";
 
 export const winningCombination = [
   {
@@ -55,9 +56,10 @@ export const winningCombination = [
 ];
 
 const GameSection = () => {
+  const params = useParams();
   const [newGame, setNewGame] = useState(false);
   const [resetGame, setResetGame] = useState(false);
-  const [player, setPlayer] = useState("X");
+  const [player, setPlayer] = useState();
   const [tiles, setTiles] = useState(Array(9).fill(null));
   const [start, setStart] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -73,8 +75,11 @@ const GameSection = () => {
 
   const [playerXScore, setPlayerXScore] = useState(0);
   const [playerOScore, setPlayerOScore] = useState(0);
+  const [firstSelect, setFirstSelect] = useState("");
 
   const [socket, setSocket] = useState(null);
+
+  console.log({ params });
 
   useEffect(() => {
     // Check for a winner every time the tiles change useEffect(() => {
@@ -101,18 +106,7 @@ const GameSection = () => {
   }, [gameOver, draw]);
 
   const handleReset = () => {
-    handleResetGame({
-      setResetGame,
-      resetGame,
-      setTiles,
-      setPlayer,
-      setGameOver,
-      setStart,
-      setWinner,
-      setDraw,
-      setShowResult,
-      setSrikeClass,
-    });
+    socket.emit("resetGame", !resetGame);
   };
 
   const socketClient = () => {
@@ -124,9 +118,48 @@ const GameSection = () => {
           transports: ["websocket"],
           path: "/api/socketio",
         });
+
+
         newSocket.on("connect", () => {
           console.log("Established ws connected to io server", newSocket.id);
         });
+        newSocket.emit("join_game", params?.invitedId);
+
+
+        newSocket.on("newGame", (payload) => {
+          setNewGame(payload.value);
+        });
+
+        newSocket.on("setPlayer", (payload) => {
+          setPlayer(payload);
+        });
+        newSocket.on("setFirstSelect", (payload) => {
+          setFirstSelect(payload);
+        });
+
+        newSocket.on("setTiles", (payload) => {
+          setTiles(payload);
+        });
+
+        newSocket.on("setStart", (payload) => {
+          setStart(payload);
+        });
+
+        newSocket.on("resetGame", (payload) => {
+          handleResetGame({
+            setResetGame,
+            resetGame,
+            setTiles,
+            setPlayer,
+            setGameOver,
+            setStart,
+            setWinner,
+            setDraw,
+            setShowResult,
+            setSrikeClass,
+          });
+        });
+
         newSocket.on("disconnect", (reason) => {
           if (
             !["io client disconnect", "io server disconnect"].includes(reason)
@@ -152,10 +185,17 @@ const GameSection = () => {
     };
   }, [socket]);
 
-
   console.log(socket)
 
-
+  const handleSelectPlayer = (select) => {
+    if (!start) {
+      socket.emit("setPlayer", select);
+      socket.emit("firstSelect", select);
+      socket.emit("setFirstSelect", select === "X" ? "O" : "X");
+      return;
+    }
+    return;
+  };
 
   return (
     <>
@@ -172,9 +212,16 @@ const GameSection = () => {
 
           {!newGame && (
             <div className="">
-              <Button onClick={() => {
-                socket?.emit("message", true)
-              }}>Start Game</Button>
+              <Button
+                onClick={() => {
+                  socket?.emit("newGame", {
+                    room: params?.invitedId,
+                    value: true,
+                  });
+                }}
+              >
+                Start Game
+              </Button>
             </div>
           )}
 
@@ -182,21 +229,26 @@ const GameSection = () => {
             <>
               <div className="text-center w-full space-y-4 border-b pb-2">
                 <Players
-                  start={start}
                   playerOScore={playerOScore}
                   playerXScore={playerXScore}
                   player={player}
-                  setPlayer={setPlayer}
+                  handlePlayer={handleSelectPlayer}
                 />
-                <GameStatus gameOver={gameOver} start={start} player={player} />
+                <GameStatus
+                  placeholder={"Select player"}
+                  gameOver={gameOver}
+                  start={start}
+                  player={player}
+                />
               </div>
 
               {gameOver && showResult && winner ? (
-                <Winner winner={winner} resetGame={handleResetGame} />
+                <Winner winner={winner} resetGame={handleReset} />
               ) : gameOver && showResult && draw ? (
-                <Draw resetGame={handleResetGame} />
+                <Draw resetGame={handleReset} />
               ) : (
                 <GameBoard
+                  firstSelect={firstSelect}
                   key={resetGame}
                   setDraw={setDraw}
                   setGameOver={setGameOver}
@@ -207,6 +259,7 @@ const GameSection = () => {
                   player={player}
                   strikeClass={strikeClass}
                   setPlayer={setPlayer}
+                  socket={socket}
                 />
               )}
               <div className="flex justify-center">

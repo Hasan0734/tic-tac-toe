@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import GameBoard from "./GameBoard";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { cn, handleResetGame, winnerChecker } from "@/lib/utils";
+import { cn, handlePlayer, handleResetGame, winnerChecker } from "@/lib/utils";
 import Winner from "./Winner";
 import Draw from "./Draw";
 import PlayType from "./PlayType";
@@ -53,8 +53,6 @@ export const winningCombination = [
   }, // Top-right to bottom-left diagonal
 ];
 
-
-
 const HomeSection = () => {
   const [newGame, setNewGame] = useState(false);
   const [resetGame, setResetGame] = useState(false);
@@ -99,7 +97,6 @@ const HomeSection = () => {
     }
   }, [gameOver, draw]);
 
-
   const handleReset = () => {
     handleResetGame({
       setResetGame,
@@ -113,6 +110,14 @@ const HomeSection = () => {
       setShowResult,
       setSrikeClass,
     });
+  };
+
+  const handleSelectPlayer = (select) => {
+    if (!start) {
+      setPlayer(select);
+      return;
+    }
+    return;
   };
 
   return (
@@ -138,13 +143,17 @@ const HomeSection = () => {
             <>
               <div className="text-center w-full space-y-4 border-b pb-2">
                 <Players
-                  start={start}
                   playerOScore={playerOScore}
                   playerXScore={playerXScore}
                   player={player}
-                  setPlayer={setPlayer}
+                  handlePlayer={handleSelectPlayer}
                 />
-                <GameStatus gameOver={gameOver} start={start} player={player} />
+                <GameStatus
+                  placeholder={"Start game or select player"}
+                  gameOver={gameOver}
+                  start={start}
+                  player={player}
+                />
               </div>
 
               {gameOver && showResult && winner ? (

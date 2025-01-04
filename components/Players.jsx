@@ -1,13 +1,13 @@
-import { cn, handlePlayer } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Circle, X } from "lucide-react";
 import React from "react";
 
-const Players = ({ start, player, playerOScore, playerXScore, setPlayer }) => {
+const Players = ({ handlePlayer, player, playerOScore, playerXScore }) => {
   return (
     <>
       <div className="flex items-center w-full gap-4">
         <div
-          onClick={() => (start ? "" : handlePlayer(player, setPlayer))}
+          onClick={() => handlePlayer("X")}
           className={cn(
             "flex-grow border rounded-md px-4 py-1.5 flex items-center justify-between cursor-pointer",
             { "border-b-primary border-b-4 ": player === "X" }
@@ -19,7 +19,7 @@ const Players = ({ start, player, playerOScore, playerXScore, setPlayer }) => {
           </span>
         </div>
         <div
-          onClick={() => (start ? "" : handlePlayer(player, setPlayer))}
+          onClick={() => handlePlayer("O")}
           className={cn(
             "flex-grow border rounded-md px-4 py-1.5 flex items-center justify-between cursor-pointer",
             { "border-b-primary  border-b-4 ": player === "O" }
