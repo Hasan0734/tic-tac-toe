@@ -9,7 +9,7 @@ import GameStatus from "../GameStatus";
 import Winner from "../Winner";
 import Draw from "../Draw";
 import GameBoard from "../GameBoard";
-import useWebSocketConnectionHook from "@/lib/hooks";
+import { io } from "socket.io-client";
 
 export const winningCombination = [
   {
@@ -74,6 +74,8 @@ const GameSection = () => {
   const [playerXScore, setPlayerXScore] = useState(0);
   const [playerOScore, setPlayerOScore] = useState(0);
 
+  const [socket, setSocket] = useState(null);
+
   useEffect(() => {
     // Check for a winner every time the tiles change useEffect(() => {
     winnerChecker({
@@ -113,9 +115,47 @@ const GameSection = () => {
     });
   };
 
-  useWebSocketConnectionHook(() => {
-    console.log("Me connected");
-  }, "MESSAGE");
+  const socketClient = () => {
+    fetch("/api/socketio").finally(() => {
+      if (socket !== null) {
+        console.log({ connected: socket.connected });
+      } else {
+        const newSocket = io({
+          transports: ["websocket"],
+          path: "/api/socketio",
+        });
+        newSocket.on("connect", () => {
+          console.log("Established ws connected to io server", newSocket.id);
+        });
+        newSocket.on("disconnect", (reason) => {
+          if (
+            !["io client disconnect", "io server disconnect"].includes(reason)
+          ) {
+            console.error(
+              "Socket connection closed due to: ",
+              reason,
+              "socket: ",
+              socket
+            );
+          }
+        });
+
+        setSocket(newSocket);
+      }
+    });
+  };
+
+  useEffect(() => {
+    socketClient();
+    return () => {
+      socket?.disconnect();
+    };
+  }, [socket]);
+
+
+  console.log(socket)
+
+
 
   return (
     <>
@@ -132,7 +172,9 @@ const GameSection = () => {
 
           {!newGame && (
             <div className="">
-              <Button onClick={setNewGame}>Start Game</Button>
+              <Button onClick={() => {
+                socket?.emit("message", true)
+              }}>Start Game</Button>
             </div>
           )}
 
