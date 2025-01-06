@@ -22,8 +22,9 @@ const GameBoard = ({
 
   const handleClick = (i) => {
 
-    console.log({turn, i})
     if (!player && tiles[i] && gameOver) return;
+
+    console.log({turn, player})
 
     if (socket) {
       if (turn === player) {

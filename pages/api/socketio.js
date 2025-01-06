@@ -18,8 +18,9 @@ export default function handler(req, res) {
 
     io.on("connection", (socket) => {
       console.log("New Socket.IO connection");
+      const { playerId, roomId } = socket.handshake.query;
 
-      const roomId = socket.handshake.query.roomId.toLowerCase();
+      console.log({ playerId, roomId });
 
       if (roomId) {
         if (!rooms[roomId]) {
@@ -33,28 +34,41 @@ export default function handler(req, res) {
       }
 
       const roomData = rooms[roomId];
+      // Check if the player already exists in the room
+      const existingPlayer = roomData.players.find((p) => p.id === playerId);
 
-      if (roomData.players.length < 2) {
-        roomData.players.push(socket.id);
-        socket.join(roomId);
+      if (existingPlayer) {
+        // Update the socket ID for the existing player
+        existingPlayer.socketId = socket.id;
+      } else if (roomData.players.length < 2) {
+        // Add a new player
+        const symbol = roomData.players.length === 0 ? "X" : "O";
+        console.log({symbol})
+        roomData.players.push({ id: playerId, socketId: socket.id, symbol });
 
-        // assign the symbol
-        const playerSymbol = roomData.players[0] === socket.id ? "X" : "O";
+        console.log(roomData)
 
         io.to(roomId).emit("player_assigned", {
-          player: playerSymbol,
+          room: roomData,
+          playerId,
+          symbol,
           board: roomData.board,
-          rooms
-        });
-
-        io.to(roomId).emit("player_update", {
           players: roomData.players,
-          turn: roomData.turn,
         });
       } else {
+        // Room is full
         socket.emit("roomFull", { message: "Room is full" });
         socket.disconnect();
+        return;
       }
+
+      // Join the room
+      socket.join(roomId);
+
+      io.to(roomId).emit("player_update", {
+        players: roomData.players,
+        turn: roomData.turn,
+      });
 
       socket.on("newGame", (payload) => {
         broadcast(roomId, "newGame", payload);
@@ -79,6 +93,8 @@ export default function handler(req, res) {
             const { winner, className, ...rest } = result;
 
             roomData.scores[winner] += 1;
+
+            console.log(roomData);
             // Game is over, send the winner to both players
             io.to(roomId).emit("game_over", {
               winner,
@@ -120,11 +136,11 @@ export default function handler(req, res) {
       // });
 
       socket.on("disconnect", () => {
-        console.log("Socket.IO connecion closed", socket.id);
+        console.log("Socket.IO connecion closed", playerId);
 
         for (const room in rooms) {
           const roomData = rooms[room];
-          roomData.players = roomData.players.filter((id) => id !== socket.id);
+          roomData.players = roomData.players.filter((id) => id !== playerId);
 
           if (roomData.players.length === 0) {
             delete rooms[room];

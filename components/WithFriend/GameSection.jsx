@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { cn, handleResetGame, winnerChecker } from "@/lib/utils";
+import { cn, getPlayerId, handleResetGame, winnerChecker } from "@/lib/utils";
 import { Card } from "../ui/card";
 import PlayType from "../PlayType";
 import { Button } from "../ui/button";
@@ -59,7 +59,7 @@ const GameSection = () => {
   const params = useParams();
   const [newGame, setNewGame] = useState(false);
   const [resetGame, setResetGame] = useState(false);
-  const [player, setPlayer] = useState('');
+  const [player, setPlayer] = useState("");
   const [tiles, setTiles] = useState(Array(9).fill(null));
   const [start, setStart] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -78,7 +78,6 @@ const GameSection = () => {
 
   const [socket, setSocket] = useState(null);
 
-
   // useEffect(() => {
   //   // Check for a winner every time the tiles change useEffect(() => {
   //   winnerChecker({
@@ -93,13 +92,13 @@ const GameSection = () => {
 
   // showing the result
 
-  useEffect(() => {
-    if (gameOver) {
-      setShowResult(false); // Ensure it's hidden initially
-      const timer = setTimeout(() => setShowResult(true), draw ? 500 : 1200); // Delay visibility by 2 seconds
-      return () => clearTimeout(timer); // Cleanup timer on unmount
-    }
-  }, [gameOver, draw]);
+  // useEffect(() => {
+  //   if (gameOver) {
+  //     setShowResult(false); // Ensure it's hidden initially
+  //     const timer = setTimeout(() => setShowResult(true), draw ? 500 : 1200); // Delay visibility by 2 seconds
+  //     return () => clearTimeout(timer); // Cleanup timer on unmount
+  //   }
+  // }, [gameOver, draw]);
 
   const handleReset = () => {
     socket.emit("resetGame", !resetGame);
@@ -192,13 +191,19 @@ const GameSection = () => {
             // setConnected(true)
             console.log("connected");
           });
+
+          newSocket.on("welcome", (data) => {
+            console.log("Connected as: ", data.playerId);
+          });
+
           newSocket.on("newGame", (payload) => {
             setNewGame(payload);
           });
 
-          newSocket.on("player_assigned", ({ player, board, rooms }) => {
-            console.log({rooms})
-            setPlayer(player);
+          newSocket.on("player_assigned", ({ board, rooms, symbol }) => {
+            
+            console.log({ rooms, symbol });
+            setPlayer(symbol);
             setTiles(board);
           });
 
@@ -206,31 +211,20 @@ const GameSection = () => {
             setTurn(turn);
           });
 
-          newSocket.on("update_board", ({board, turn}) => {
+          newSocket.on("update_board", ({ board, turn }) => {
             setTurn(turn);
-            setTiles(board)
-          })
+            setTiles(board);
+          });
 
-          newSocket.on("game_over", (gameOver, winner, scores) => {
-            setWinner(winner)
-            setGameOver(gameOver)
-            setScores(scores)
-          })
+          // newSocket.on("game_over", (gameOver, winner, scores) => {
+          //   setWinner(winner)
+          //   setGameOver(gameOver)
+          //   setScores(scores)
+          // })
 
           // newSocket.on("setPlayer", (payload) => {
           //   setPlayer(payload);
           // });
-          newSocket.on("setFirstSelect", (payload) => {
-            setFirstSelect(payload);
-          });
-
-          newSocket.on("setTiles", (payload) => {
-            setTiles(payload);
-          });
-
-          newSocket.on("setStart", (payload) => {
-            setStart(payload);
-          });
 
           newSocket.on("resetGame", (payload) => {
             handleResetGame({
@@ -268,9 +262,6 @@ const GameSection = () => {
     }
     return;
   };
-
-  console.log(scores['X'])
-
 
   return (
     <>
