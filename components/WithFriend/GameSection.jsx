@@ -59,7 +59,7 @@ const GameSection = () => {
   const params = useParams();
   const [newGame, setNewGame] = useState(false);
   const [resetGame, setResetGame] = useState(false);
-  const [player, setPlayer] = useState();
+  const [player, setPlayer] = useState('');
   const [tiles, setTiles] = useState(Array(9).fill(null));
   const [start, setStart] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -72,28 +72,24 @@ const GameSection = () => {
     height: 0,
   });
   const [matchIndex, setMatchIndex] = useState([]);
-
-  const [playerXScore, setPlayerXScore] = useState(0);
-  const [playerOScore, setPlayerOScore] = useState(0);
   const [firstSelect, setFirstSelect] = useState("");
+  const [scores, setScores] = useState({ X: 0, O: 0 });
+  const [turn, setTurn] = useState("X"); // Current turn
 
   const [socket, setSocket] = useState(null);
 
-  console.log({ params });
 
-  useEffect(() => {
-    // Check for a winner every time the tiles change useEffect(() => {
-    winnerChecker({
-      winningCombination,
-      tiles,
-      setWinner,
-      setGameOver,
-      setPlayerXScore,
-      setPlayerOScore,
-      setSrikeClass,
-      setMatchIndex,
-    });
-  }, [tiles]);
+  // useEffect(() => {
+  //   // Check for a winner every time the tiles change useEffect(() => {
+  //   winnerChecker({
+  //     winningCombination,
+  //     tiles,
+  //     setWinner,
+  //     setGameOver,
+  //     setSrikeClass,
+  //     setMatchIndex,
+  //   });
+  // }, [tiles]);
 
   // showing the result
 
@@ -200,9 +196,30 @@ const GameSection = () => {
             setNewGame(payload);
           });
 
-          newSocket.on("setPlayer", (payload) => {
-            setPlayer(payload);
+          newSocket.on("player_assigned", ({ player, board }) => {
+            console.log({player, board})
+            setPlayer(player);
+            setTiles(board);
           });
+
+          newSocket.on("players_updated", ({ players, turn }) => {
+            setTurn(turn);
+          });
+
+          newSocket.on("update_board", ({board, turn}) => {
+            setTurn(turn);
+            setTiles(board)
+          })
+
+          newSocket.on("game_over", (gameOver, winner, scores) => {
+            setWinner(winner)
+            setGameOver(gameOver)
+            setScores(scores)
+          })
+
+          // newSocket.on("setPlayer", (payload) => {
+          //   setPlayer(payload);
+          // });
           newSocket.on("setFirstSelect", (payload) => {
             setFirstSelect(payload);
           });
@@ -252,6 +269,8 @@ const GameSection = () => {
     return;
   };
 
+  console.log({turn: turn, player})
+
   return (
     <>
       <div className="flex flex-col items-center gap-6">
@@ -281,16 +300,17 @@ const GameSection = () => {
             <>
               <div className="text-center w-full space-y-4 border-b pb-2">
                 <Players
-                  playerOScore={playerOScore}
-                  playerXScore={playerXScore}
-                  player={player}
+                  playerOScore={scores['O']}
+                  playerXScore={scores['X']}
+                  player={turn}
                   handlePlayer={handleSelectPlayer}
                 />
                 <GameStatus
                   placeholder={"Select player"}
                   gameOver={gameOver}
                   start={start}
-                  player={player}
+                  player={turn}
+                  socket={socket}
                 />
               </div>
 
@@ -309,6 +329,7 @@ const GameSection = () => {
                   setTiles={setTiles}
                   tiles={tiles}
                   player={player}
+                  turn={turn}
                   strikeClass={strikeClass}
                   setPlayer={setPlayer}
                   socket={socket}

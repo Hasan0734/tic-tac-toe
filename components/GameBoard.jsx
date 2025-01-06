@@ -3,6 +3,7 @@ import React from "react";
 import BoardBorder from "./BoardBorder";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useParams } from "next/navigation";
 
 const GameBoard = ({
   player,
@@ -15,36 +16,28 @@ const GameBoard = ({
   setStart,
   setPlayer,
   socket,
-  firstSelect
+  turn
 }) => {
+  const params = useParams();
+
   const handleClick = (i) => {
 
-
-    console.log(tiles)
-
-    if(firstSelect === player){
-
-    }
-
-
+    console.log({turn, i})
     if (!player && tiles[i] && gameOver) return;
 
+    if (socket) {
+      if (turn === player) {
+        socket.emit("make_move", { roomId: params.invitedId, i, player });
+      }
+      return;
+    }
 
     const updateTiles = [...tiles];
     updateTiles[i] = player;
-   
 
-
-
-    if (socket) {
-      socket.emit("setPlayer", player === "X" ? "O" : "X");
-      socket.emit("setTiles", updateTiles)
-      socket.emit("setStart", true)
-    } else {
-      setStart(true);
-      setPlayer(player === "X" ? "O" : "X");
-      setTiles(updateTiles);
-    }
+    setStart(true);
+    setPlayer(player === "X" ? "O" : "X");
+    setTiles(updateTiles);
 
     if (updateTiles.every((cell) => cell !== null)) {
       setGameOver(true); // Game is a draw

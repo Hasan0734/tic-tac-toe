@@ -7,7 +7,7 @@ const GameStatus = ({player, start, gameOver, placeholder}) => {
    <p className="text-sm text-muted-foreground">
                   {gameOver ? (
                     "Game over"
-                  ) : start ? (
+                  ) : start || player? (
                     <>
                       <span className="text-primary font-semibold">
                         {player}
