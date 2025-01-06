@@ -9,8 +9,8 @@ import GameStatus from "../GameStatus";
 import Winner from "../Winner";
 import Draw from "../Draw";
 import GameBoard from "../GameBoard";
-import { io } from "socket.io-client";
 import { useParams } from "next/navigation";
+import { createClientSocket } from "@/lib/socket";
 
 export const winningCombination = [
   {
@@ -109,87 +109,142 @@ const GameSection = () => {
     socket.emit("resetGame", !resetGame);
   };
 
-  const socketClient = () => {
-    fetch("/api/socketio").finally(() => {
-      if (socket !== null) {
-        console.log({ connected: socket.connected });
-      } else {
-        const newSocket = io({
-          transports: ["websocket"],
-          path: "/api/socketio",
-        });
+  // const socketClient = () => {
+  //   fetch("/api/socketio").finally(() => {
+  //     if (socket !== null) {
+  //       console.log({ connected: socket.connected });
+  //     } else {
+  //       const newSocket = io({
+  //         transports: ["websocket"],
+  //         path: "/api/socketio",
+  //       });
 
+  //       newSocket.emit("join_game", params?.invitedId);
 
-        newSocket.on("connect", () => {
-          console.log("Established ws connected to io server", newSocket.id);
-        });
-        newSocket.emit("join_game", params?.invitedId);
+  //       newSocket.on("connect", () => {
+  //         console.log("Established ws connected to io server", newSocket.id);
+  //       });
 
+  //       newSocket.on("newGame", (payload) => {
+  //         console.log(payload)
+  //         setNewGame(payload.value);
+  //       });
 
-        newSocket.on("newGame", (payload) => {
-          setNewGame(payload.value);
-        });
+  //       newSocket.on("setPlayer", (payload) => {
+  //         setPlayer(payload);
+  //       });
+  //       newSocket.on("setFirstSelect", (payload) => {
+  //         setFirstSelect(payload);
+  //       });
 
-        newSocket.on("setPlayer", (payload) => {
-          setPlayer(payload);
-        });
-        newSocket.on("setFirstSelect", (payload) => {
-          setFirstSelect(payload);
-        });
+  //       newSocket.on("setTiles", (payload) => {
+  //         setTiles(payload);
+  //       });
 
-        newSocket.on("setTiles", (payload) => {
-          setTiles(payload);
-        });
+  //       newSocket.on("setStart", (payload) => {
+  //         setStart(payload);
+  //       });
 
-        newSocket.on("setStart", (payload) => {
-          setStart(payload);
-        });
+  //       newSocket.on("resetGame", (payload) => {
+  //         handleResetGame({
+  //           setResetGame,
+  //           resetGame,
+  //           setTiles,
+  //           setPlayer,
+  //           setGameOver,
+  //           setStart,
+  //           setWinner,
+  //           setDraw,
+  //           setShowResult,
+  //           setSrikeClass,
+  //         });
+  //       });
 
-        newSocket.on("resetGame", (payload) => {
-          handleResetGame({
-            setResetGame,
-            resetGame,
-            setTiles,
-            setPlayer,
-            setGameOver,
-            setStart,
-            setWinner,
-            setDraw,
-            setShowResult,
-            setSrikeClass,
-          });
-        });
+  //       newSocket.on("disconnect", (reason) => {
+  //         if (
+  //           !["io client disconnect", "io server disconnect"].includes(reason)
+  //         ) {
+  //           console.error(
+  //             "Socket connection closed due to: ",
+  //             reason,
+  //             "socket: ",
+  //             socket
+  //           );
+  //         }
+  //       });
 
-        newSocket.on("disconnect", (reason) => {
-          if (
-            !["io client disconnect", "io server disconnect"].includes(reason)
-          ) {
-            console.error(
-              "Socket connection closed due to: ",
-              reason,
-              "socket: ",
-              socket
-            );
-          }
-        });
+  //       setSocket(newSocket);
+  //     }
+  //   });
+  // };
 
-        setSocket(newSocket);
-      }
-    });
-  };
+  // useEffect(() => {
+  //   socketClient();
+  //   return () => {
+  //     socket?.disconnect();
+  //   };
+  // }, [socket]);
 
   useEffect(() => {
-    socketClient();
-    return () => {
-      socket?.disconnect();
-    };
-  }, [socket]);
+    if (params?.invitedId) {
+      fetch("/api/socketio").finally(() => {
+        if (socket !== null) {
+          // setConnected(socket.connected)
+        } else {
+          const newSocket = createClientSocket(params?.invitedId);
+          newSocket.on("connect", () => {
+            // setConnected(true)
+            console.log("connected");
+          });
+          newSocket.on("newGame", (payload) => {
+            setNewGame(payload);
+          });
 
-  console.log(socket)
+          newSocket.on("setPlayer", (payload) => {
+            setPlayer(payload);
+          });
+          newSocket.on("setFirstSelect", (payload) => {
+            setFirstSelect(payload);
+          });
+
+          newSocket.on("setTiles", (payload) => {
+            setTiles(payload);
+          });
+
+          newSocket.on("setStart", (payload) => {
+            setStart(payload);
+          });
+
+          newSocket.on("resetGame", (payload) => {
+            handleResetGame({
+              setResetGame,
+              resetGame,
+              setTiles,
+              setPlayer,
+              setGameOver,
+              setStart,
+              setWinner,
+              setDraw,
+              setShowResult,
+              setSrikeClass,
+            });
+          });
+
+          setSocket(newSocket);
+        }
+      });
+    }
+
+    return () => {
+      if (socket !== null) {
+        socket.disconnect();
+      }
+    };
+  }, [params?.invitedId, socket]);
 
   const handleSelectPlayer = (select) => {
     if (!start) {
-      socket.emit("setPlayer", select);
+      socket.emit("setPlayer", { value: select });
       socket.emit("firstSelect", select);
       socket.emit("setFirstSelect", select === "X" ? "O" : "X");
       return;
@@ -214,10 +269,7 @@ const GameSection = () => {
             <div className="">
               <Button
                 onClick={() => {
-                  socket?.emit("newGame", {
-                    room: params?.invitedId,
-                    value: true,
-                  });
+                  socket?.emit("newGame", true);
                 }}
               >
                 Start Game

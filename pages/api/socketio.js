@@ -7,39 +7,44 @@ export default function handler(req, res) {
     const io = new Server(res.socket.server, {
       path: "/api/socketio",
     });
-
     //store the server instance to prevent re-initialization
     res.socket.server.io = io;
+
+    const broadcast =  (roomId, event, payload) => {
+      io.to(roomId).emit(event, payload);
+    };
 
     io.on("connection", (socket) => {
       console.log("New Socket.IO connection");
 
-      socket.on("join_game", (room) => {
-        socket.join(room);
+      const roomId = socket.handshake.query.roomId.toLowerCase();
+
+        console.log({roomId})
+
+      socket.join(roomId);
+
+      socket.on("newGame", (payload) => {
+        broadcast(roomId, "newGame", payload);
       });
 
-      socket.on("newGame", (data) => {
-        io.to(data.room).emit("newGame", data);
+      socket.on("setPlayer", (payload) => {
+        broadcast(roomId, "setPlayer", payload);
       });
 
-      socket.on("setPlayer", ({ room, payload }) => {
-        io.emit("setPlayer", { room, payload });
+      socket.on("setTiles", (payload) => {
+        broadcast(roomId, "setTiles", payload);
       });
 
-      socket.on("setTiles", ({ room, payload }) => {
-        io.emit("setTiles", { room, payload });
+      socket.on("setStart", (payload) => {
+        broadcast(roomId, "setStart", payload);
       });
 
-      socket.on("setStart", ({ room, payload }) => {
-        io.emit("setStart", { room, payload });
+      socket.on("firstSelect", (payload) => {
+        broadcast(roomId, "firstSelect", payload);
       });
 
-      socket.on("firstSelect", ({ room, payload }) => {
-        io.emit("firstSelect", { room, payload });
-      });
-
-      socket.on("resetGame", ({ room, payload }) => {
-        io.emit("resetGame", { room, payload });
+      socket.on("resetGame", (payload) => {
+        broadcast(roomId, "resetGame", payload);
       });
 
       socket.on("disconnect", () => {
