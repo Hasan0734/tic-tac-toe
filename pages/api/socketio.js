@@ -41,9 +41,10 @@ export default function handler(req, res) {
         // assign the symbol
         const playerSymbol = roomData.players[0] === socket.id ? "X" : "O";
 
-        socket.emit("player_assigned", {
+        io.to(roomId).emit("player_assigned", {
           player: playerSymbol,
           board: roomData.board,
+          rooms
         });
 
         io.to(roomId).emit("player_update", {
@@ -63,7 +64,6 @@ export default function handler(req, res) {
         console.log({ roomId, i, player });
 
         const roomData = rooms[roomId];
-        console.log({ roomData, rooms });
         if (roomData && roomData.turn === player && !roomData.board[i]) {
           roomData.board[i] = player;
           roomData.turn = player === "X" ? "O" : "X";
@@ -73,15 +73,19 @@ export default function handler(req, res) {
             turn: roomData.turn,
           });
 
-          const winner = checkWinner(roomData.board);
+          const result = checkWinner(roomData.board);
 
-          if (winner) {
+          if (result.winner) {
+            const { winner, className, ...rest } = result;
+
             roomData.scores[winner] += 1;
             // Game is over, send the winner to both players
             io.to(roomId).emit("game_over", {
               winner,
               gameOver: true,
               scores: roomData.scores,
+              className,
+              ...rest,
             });
           } else if (roomData.board.every((cell) => cell !== null)) {
             // Game is a draw
@@ -89,7 +93,7 @@ export default function handler(req, res) {
               winner: null,
               gameOver: true,
               scores: roomData.scores,
-              draw: true
+              draw: true,
             });
           }
         }

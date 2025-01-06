@@ -196,8 +196,8 @@ const GameSection = () => {
             setNewGame(payload);
           });
 
-          newSocket.on("player_assigned", ({ player, board }) => {
-            console.log({player, board})
+          newSocket.on("player_assigned", ({ player, board, rooms }) => {
+            console.log({rooms})
             setPlayer(player);
             setTiles(board);
           });
@@ -269,7 +269,8 @@ const GameSection = () => {
     return;
   };
 
-  console.log({turn: turn, player})
+  console.log(scores['X'])
+
 
   return (
     <>
@@ -300,8 +301,8 @@ const GameSection = () => {
             <>
               <div className="text-center w-full space-y-4 border-b pb-2">
                 <Players
-                  playerOScore={scores['O']}
-                  playerXScore={scores['X']}
+                  playerOScore={0}
+                  playerXScore={0}
                   player={turn}
                   handlePlayer={handleSelectPlayer}
                 />
