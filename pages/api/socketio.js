@@ -28,7 +28,6 @@ export default function handler(req, res) {
       socket.on(
         "create_or_join_room",
         ({ roomId: room, playerId: player, name }) => {
-          console.log({ player, room, name });
           if (!rooms[roomId]) {
             //create room and assign ownership
 
@@ -45,6 +44,7 @@ export default function handler(req, res) {
               turn: "X",
               pendingRequests: [],
               scores: { X: 0, O: 0 },
+              started: false,
             };
             socket.join(roomId);
             socket.emit("room_created", {
@@ -90,11 +90,19 @@ export default function handler(req, res) {
             const pl = rooms[roomId].pendingRequests.find(
               (pl) => pl.id === plId
             );
-            rooms[roomId].players.push(pl);
-            io.to(playerSockets[plId]).emit("join_accepted", {
-              message: "Accepted your request",
-            });
-            io.to(roomId).emit("newGame", true);
+
+            if (rooms[roomId].players.length < 2) {
+              rooms[roomId].players.push(pl);
+              rooms[roomId].started = true;
+              io.to(playerSockets[plId]).emit("join_accepted", {
+                message: "Accepted your request",
+              });
+              broadcast(roomId, "newGame", rooms[roomId].started);
+            } else {
+              io.to(roomId).emit("room_full", {
+                message: "Room is full",
+              });
+            }
           } else {
             io.to(playerSockets[plId]).emit("join_rejected", {
               message: "Rejected your request",
@@ -105,6 +113,10 @@ export default function handler(req, res) {
           );
         }
       });
+
+      if (rooms[roomId]?.started) {
+        io.to(roomId).emit("game_state", rooms[roomId]);
+      }
 
       // const roomData = rooms[roomId];
       // // Check if the player already exists in the room

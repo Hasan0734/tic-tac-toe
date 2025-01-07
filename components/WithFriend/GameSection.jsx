@@ -114,9 +114,11 @@ const GameSection = () => {
               description: message,
             });
             setLoading(false);
+            // setNewGame(true);
           });
+
           newSocket.on("newGame", (payload) => {
-            setNewGame(true);
+            setNewGame(payload);
           });
 
           newSocket.on("join_rejected", ({ message }) => {
@@ -125,6 +127,10 @@ const GameSection = () => {
               description: message,
             });
             setLoading(false);
+          });
+
+          newSocket.on("game_state", (payload) => {
+            console.log({ payload });
           });
 
           // newSocket.on("game_over", (gameOver, winner, scores) => {
