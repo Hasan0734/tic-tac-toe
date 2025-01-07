@@ -11,6 +11,9 @@ import Draw from "../Draw";
 import GameBoard from "../GameBoard";
 import { useParams } from "next/navigation";
 import { createClientSocket } from "@/lib/socket";
+import { Input } from "../ui/input";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export const winningCombination = [
   {
@@ -75,110 +78,18 @@ const GameSection = () => {
   const [firstSelect, setFirstSelect] = useState("");
   const [scores, setScores] = useState({ X: 0, O: 0 });
   const [turn, setTurn] = useState("X"); // Current turn
-
+  const [playerName, setPlayerName] = useState("");
+  const [joined, setJoined] = useState("");
+  const [playerId, setPlayerId] = useState("");
+  const [isOwner, setIsOwner] = useState(null);
+  const [pendingRequest, setPendingRequest] = useState([]);
   const [socket, setSocket] = useState(null);
-
-  // useEffect(() => {
-  //   // Check for a winner every time the tiles change useEffect(() => {
-  //   winnerChecker({
-  //     winningCombination,
-  //     tiles,
-  //     setWinner,
-  //     setGameOver,
-  //     setSrikeClass,
-  //     setMatchIndex,
-  //   });
-  // }, [tiles]);
-
-  // showing the result
-
-  // useEffect(() => {
-  //   if (gameOver) {
-  //     setShowResult(false); // Ensure it's hidden initially
-  //     const timer = setTimeout(() => setShowResult(true), draw ? 500 : 1200); // Delay visibility by 2 seconds
-  //     return () => clearTimeout(timer); // Cleanup timer on unmount
-  //   }
-  // }, [gameOver, draw]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleReset = () => {
     socket.emit("resetGame", !resetGame);
   };
-
-  // const socketClient = () => {
-  //   fetch("/api/socketio").finally(() => {
-  //     if (socket !== null) {
-  //       console.log({ connected: socket.connected });
-  //     } else {
-  //       const newSocket = io({
-  //         transports: ["websocket"],
-  //         path: "/api/socketio",
-  //       });
-
-  //       newSocket.emit("join_game", params?.invitedId);
-
-  //       newSocket.on("connect", () => {
-  //         console.log("Established ws connected to io server", newSocket.id);
-  //       });
-
-  //       newSocket.on("newGame", (payload) => {
-  //         console.log(payload)
-  //         setNewGame(payload.value);
-  //       });
-
-  //       newSocket.on("setPlayer", (payload) => {
-  //         setPlayer(payload);
-  //       });
-  //       newSocket.on("setFirstSelect", (payload) => {
-  //         setFirstSelect(payload);
-  //       });
-
-  //       newSocket.on("setTiles", (payload) => {
-  //         setTiles(payload);
-  //       });
-
-  //       newSocket.on("setStart", (payload) => {
-  //         setStart(payload);
-  //       });
-
-  //       newSocket.on("resetGame", (payload) => {
-  //         handleResetGame({
-  //           setResetGame,
-  //           resetGame,
-  //           setTiles,
-  //           setPlayer,
-  //           setGameOver,
-  //           setStart,
-  //           setWinner,
-  //           setDraw,
-  //           setShowResult,
-  //           setSrikeClass,
-  //         });
-  //       });
-
-  //       newSocket.on("disconnect", (reason) => {
-  //         if (
-  //           !["io client disconnect", "io server disconnect"].includes(reason)
-  //         ) {
-  //           console.error(
-  //             "Socket connection closed due to: ",
-  //             reason,
-  //             "socket: ",
-  //             socket
-  //           );
-  //         }
-  //       });
-
-  //       setSocket(newSocket);
-  //     }
-  //   });
-  // };
-
-  // useEffect(() => {
-  //   socketClient();
-  //   return () => {
-  //     socket?.disconnect();
-  //   };
-  // }, [socket]);
 
   useEffect(() => {
     if (params?.invitedId) {
@@ -187,33 +98,33 @@ const GameSection = () => {
           // setConnected(socket.connected)
         } else {
           const newSocket = createClientSocket(params?.invitedId);
-          newSocket.on("connect", () => {
-            // setConnected(true)
-            console.log("connected");
+
+          newSocket.on("room_created", ({ owner }) => {
+            setIsOwner(true);
+            setLoading(false);
           });
 
-          newSocket.on("welcome", (data) => {
-            console.log("Connected as: ", data.playerId);
+          newSocket.on("join_request", ({ player }) => {
+            setPendingRequest((prev) => [...prev, player]);
           });
 
+          newSocket.on("join_accepted", ({ message }) => {
+            toast({
+              title: "Request",
+              description: message,
+            });
+            setLoading(false);
+          });
           newSocket.on("newGame", (payload) => {
-            setNewGame(payload);
+            setNewGame(true);
           });
 
-          newSocket.on("player_assigned", ({ board, rooms, symbol }) => {
-            
-            console.log({ rooms, symbol });
-            setPlayer(symbol);
-            setTiles(board);
-          });
-
-          newSocket.on("players_updated", ({ players, turn }) => {
-            setTurn(turn);
-          });
-
-          newSocket.on("update_board", ({ board, turn }) => {
-            setTurn(turn);
-            setTiles(board);
+          newSocket.on("join_rejected", ({ message }) => {
+            toast({
+              title: "Request",
+              description: message,
+            });
+            setLoading(false);
           });
 
           // newSocket.on("game_over", (gameOver, winner, scores) => {
@@ -225,21 +136,6 @@ const GameSection = () => {
           // newSocket.on("setPlayer", (payload) => {
           //   setPlayer(payload);
           // });
-
-          newSocket.on("resetGame", (payload) => {
-            handleResetGame({
-              setResetGame,
-              resetGame,
-              setTiles,
-              setPlayer,
-              setGameOver,
-              setStart,
-              setWinner,
-              setDraw,
-              setShowResult,
-              setSrikeClass,
-            });
-          });
 
           setSocket(newSocket);
         }
@@ -263,6 +159,26 @@ const GameSection = () => {
     return;
   };
 
+  const createRoom = () => {
+    if (params?.invitedId && playerName) {
+      socket?.emit("create_or_join_room", {
+        roomId: params.invitedId,
+        playerId: localStorage.getItem("playerId"),
+        name: playerName,
+      });
+      setLoading(true);
+    }
+  };
+
+  console.log(pendingRequest);
+
+  const respondToRequest = (playerId, accept) => {
+    socket.emit("respond_to_request", { playerId, accept });
+    setPendingRequest((prev) =>
+      prev.filter((player) => player.id !== playerId)
+    );
+  };
+
   return (
     <>
       <div className="flex flex-col items-center gap-6">
@@ -277,13 +193,23 @@ const GameSection = () => {
           {newGame && <PlayType />}
 
           {!newGame && (
-            <div className="">
-              <Button
-                onClick={() => {
-                  socket?.emit("newGame", true);
-                }}
-              >
-                Start Game
+            <div className="flex items-center gap-3">
+              <div>
+                <Input
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  placeholder="Enter your name"
+                />
+              </div>
+
+              <Button disabled={loading} onClick={createRoom}>
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin" />
+                    Joining
+                  </>
+                ) : (
+                  "Join Game"
+                )}
               </Button>
             </div>
           )}
@@ -337,6 +263,27 @@ const GameSection = () => {
                 </Button>
               </div>
             </>
+          )}
+
+          {isOwner && pendingRequest?.length > 0 && (
+            <div>
+              <h3>Pending Requests</h3>
+              <ul>
+                {pendingRequest.map((pl, i) => (
+                  <li key={pl.id}>
+                    <div>{pl.name}</div>
+                    <div>
+                      <Button onClick={() => respondToRequest(pl.id, true)}>
+                        Accept
+                      </Button>
+                      <Button onClick={() => respondToRequest(pl.id, false)}>
+                        Reject
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </Card>
       </div>

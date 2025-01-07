@@ -1,5 +1,8 @@
 import { Server } from "socket.io";
 
+const rooms = {};
+const playerSockets = {};
+
 export default function handler(req, res) {
   if (!res.socket.server.io) {
     console.log("Initializing Socket.IO server ...");
@@ -10,110 +13,179 @@ export default function handler(req, res) {
     //store the server instance to prevent re-initialization
     res.socket.server.io = io;
 
-    const rooms = {};
-
     const broadcast = (roomId, event, payload) => {
       io.to(roomId).emit(event, payload);
     };
 
     io.on("connection", (socket) => {
-      console.log("New Socket.IO connection");
+      console.log("New Socket.IO connection", socket.id);
       const { playerId, roomId } = socket.handshake.query;
 
-      console.log({ playerId, roomId });
-
-      if (roomId) {
-        if (!rooms[roomId]) {
-          rooms[roomId] = {
-            players: [],
-            board: Array(9).fill(null),
-            turn: "X",
-            scores: { X: 0, O: 0 },
-          };
-        }
+      if (playerId) {
+        playerSockets[playerId] = socket.id;
       }
 
-      const roomData = rooms[roomId];
-      // Check if the player already exists in the room
-      const existingPlayer = roomData.players.find((p) => p.id === playerId);
+      socket.on(
+        "create_or_join_room",
+        ({ roomId: room, playerId: player, name }) => {
+          console.log({ player, room, name });
+          if (!rooms[roomId]) {
+            //create room and assign ownership
 
-      if (existingPlayer) {
-        // Update the socket ID for the existing player
-        existingPlayer.socketId = socket.id;
-      } else if (roomData.players.length < 2) {
-        // Add a new player
-        const symbol = roomData.players.length === 0 ? "X" : "O";
-        console.log({symbol})
-        roomData.players.push({ id: playerId, socketId: socket.id, symbol });
-
-        console.log(roomData)
-
-        io.to(roomId).emit("player_assigned", {
-          room: roomData,
-          playerId,
-          symbol,
-          board: roomData.board,
-          players: roomData.players,
-        });
-      } else {
-        // Room is full
-        socket.emit("roomFull", { message: "Room is full" });
-        socket.disconnect();
-        return;
-      }
-
-      // Join the room
-      socket.join(roomId);
-
-      io.to(roomId).emit("player_update", {
-        players: roomData.players,
-        turn: roomData.turn,
-      });
-
-      socket.on("newGame", (payload) => {
-        broadcast(roomId, "newGame", payload);
-      });
-
-      socket.on("make_move", ({ roomId, i, player }) => {
-        console.log({ roomId, i, player });
-
-        const roomData = rooms[roomId];
-        if (roomData && roomData.turn === player && !roomData.board[i]) {
-          roomData.board[i] = player;
-          roomData.turn = player === "X" ? "O" : "X";
-
-          io.to(roomId).emit("update_board", {
-            board: roomData.board,
-            turn: roomData.turn,
-          });
-
-          const result = checkWinner(roomData.board);
-
-          if (result.winner) {
-            const { winner, className, ...rest } = result;
-
-            roomData.scores[winner] += 1;
-
-            console.log(roomData);
-            // Game is over, send the winner to both players
-            io.to(roomId).emit("game_over", {
-              winner,
-              gameOver: true,
-              scores: roomData.scores,
-              className,
-              ...rest,
+            rooms[roomId] = {
+              owner: playerId,
+              players: [
+                {
+                  id: playerId,
+                  socketId: socket.id,
+                  name: name,
+                  symbol: "X",
+                },
+              ],
+              turn: "X",
+              pendingRequests: [],
+              scores: { X: 0, O: 0 },
+            };
+            socket.join(roomId);
+            socket.emit("room_created", {
+              roomId,
+              owner: playerId,
+              message: "Room Created successfully",
             });
-          } else if (roomData.board.every((cell) => cell !== null)) {
-            // Game is a draw
-            io.to(roomId).emit("game_over", {
-              winner: null,
-              gameOver: true,
-              scores: roomData.scores,
-              draw: true,
-            });
+          } else {
+            //handle join request
+            const existPlayer = rooms[roomId].players.find(
+              (item) => item.id === playerId
+            );
+            if (!existPlayer) {
+              const player = {
+                id: playerId,
+                socketId: socket.id,
+                name: name,
+                symbol: "O",
+              };
+
+              const exist = rooms[roomId].pendingRequests.find(
+                (pl) => pl.id === playerId
+              );
+
+              if (!exist) {
+                rooms[roomId].pendingRequests.push(player);
+                const ownerSocketId = playerSockets[rooms[roomId].owner];
+                if (ownerSocketId) {
+                  io.to(ownerSocketId).emit("join_request", {
+                    player,
+                    ownerSocketId,
+                  });
+                }
+              }
+            }
           }
         }
+      );
+
+      socket.on("respond_to_request", ({ playerId: plId, accept }) => {
+        if (rooms[roomId]?.owner === playerId) {
+          if (accept) {
+            const pl = rooms[roomId].pendingRequests.find(
+              (pl) => pl.id === plId
+            );
+            rooms[roomId].players.push(pl);
+            io.to(playerSockets[plId]).emit("join_accepted", {
+              message: "Accepted your request",
+            });
+            io.to(roomId).emit("newGame", true);
+          } else {
+            io.to(playerSockets[plId]).emit("join_rejected", {
+              message: "Rejected your request",
+            });
+          }
+          rooms[roomId].pendingRequests = rooms[roomId].pendingRequests.filter(
+            (pl) => pl.id !== plId
+          );
+        }
       });
+
+      // const roomData = rooms[roomId];
+      // // Check if the player already exists in the room
+      // const existingPlayer = roomData.players.find((p) => p.id === playerId);
+
+      // if (existingPlayer) {
+      //   // Update the socket ID for the existing player
+      //   existingPlayer.socketId = socket.id;
+      // } else if (roomData.players.length < 2) {
+      //   // Add a new player
+      //   const symbol = roomData.players.length === 0 ? "X" : "O";
+      //   console.log({symbol})
+      //   roomData.players.push({ id: playerId, socketId: socket.id, symbol });
+
+      //   console.log(roomData)
+
+      //   io.to(roomId).emit("player_assigned", {
+      //     room: roomData,
+      //     playerId,
+      //     symbol,
+      //     board: roomData.board,
+      //     players: roomData.players,
+      //   });
+      // } else {
+      //   // Room is full
+      //   socket.emit("roomFull", { message: "Room is full" });
+      //   socket.disconnect();
+      //   return;
+      // }
+
+      // Join the room
+
+      // io.to(roomId).emit("player_update", {
+      //   players: roomData.players,
+      //   turn: roomData.turn,
+      // });
+
+      // socket.on("newGame", (payload) => {
+      //   broadcast(roomId, "newGame", payload);
+      // });
+
+      // socket.on("make_move", ({ roomId, i, player }) => {
+      //   console.log({ roomId, i, player });
+
+      //   const roomData = rooms[roomId];
+      //   if (roomData && roomData.turn === player && !roomData.board[i]) {
+      //     roomData.board[i] = player;
+      //     roomData.turn = player === "X" ? "O" : "X";
+
+      //     io.to(roomId).emit("update_board", {
+      //       board: roomData.board,
+      //       turn: roomData.turn,
+      //     });
+
+      //     const result = checkWinner(roomData.board);
+
+      //     if (result.winner) {
+      //       const { winner, className, ...rest } = result;
+
+      //       roomData.scores[winner] += 1;
+
+      //       console.log(roomData);
+      //       // Game is over, send the winner to both players
+      //       io.to(roomId).emit("game_over", {
+      //         winner,
+      //         gameOver: true,
+      //         scores: roomData.scores,
+      //         className,
+      //         ...rest,
+      //       });
+      //     } else if (roomData.board.every((cell) => cell !== null)) {
+      //       // Game is a draw
+      //       io.to(roomId).emit("game_over", {
+      //         winner: null,
+      //         gameOver: true,
+      //         scores: roomData.scores,
+      //         draw: true,
+      //       });
+      //     }
+      //   }
+      // });
 
       // socket.on("setPlayer", (payload) => {
       //   broadcast(roomId, "setPlayer", payload);
@@ -140,22 +212,26 @@ export default function handler(req, res) {
 
         for (const room in rooms) {
           const roomData = rooms[room];
-          roomData.players = roomData.players.filter((id) => id !== playerId);
+          roomData.players = roomData.players.filter(
+            (pl) => pl.id !== playerId
+          );
 
           if (roomData.players.length === 0) {
             delete rooms[room];
+            break;
+          }
+        }
+        for (const player in playerSockets) {
+          if (playerSockets[player] === socket.id) {
+            delete playerSockets[player];
+            console.log("Playe disconnected: ", player);
+            break;
           }
         }
       });
 
       socket.on("error", (error) => {
         console.log("Socket.IO error:", error);
-      });
-
-      io.on("upgrade", function (request, socket, head) {
-        io.handlerUpgrade(request, socket, head, function (ws) {
-          socket.emit("connection", ws, request);
-        });
       });
     });
   } else {

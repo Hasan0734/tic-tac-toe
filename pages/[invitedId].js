@@ -1,3 +1,4 @@
+import { Toaster } from "@/components/ui/toaster";
 import GameSection from "@/components/WithFriend/GameSection";
 import { cn } from "@/lib/utils";
 import { Inter } from "next/font/google";
@@ -9,8 +10,11 @@ const inter = Inter({
 
 export default function WithFriend() {
   return (
-    <main className={cn("flex items-center justify-center h-dvh", inter.variable)}>
-        <GameSection/>
+    <main
+      className={cn("flex items-center justify-center h-dvh", inter.variable)}
+    >
+      <GameSection />
+      <Toaster />
     </main>
   );
 }
